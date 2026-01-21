@@ -34,9 +34,13 @@ func _on_ConvertToEngineCode_pressed():
 		push_warning("No nodes selected for conversion")
 		return
 	
+	
 	var node = selected_nodes[0]
 	assert(node is Node)
-	
+	while true:
+		if node.get_parent() is Viewport:
+			break
+		node = node.get_parent()
 	var converter := Converter.new()
 	var code := converter.convert_branch(node)
 	_conversion_dialog.set_code(code)

@@ -79,13 +79,13 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name: String) 
 	
 	# Create the node in a variable if necessary
 	if var_name != "":
-		if not _has_default_node_name(node):
-			_lines.append(space_str + str("// 创建节点:", node.name))
 		# &这个标记,代表是成员变量,不需要重新声明变量
 		if var_name.begins_with("&"):
 			var_name = var_name.substr(1)
+			_lines.append(space_str + str("// 创建节点:", var_name))
 			_lines.append(space_str + str(var_name, " = memnew(", klass_name, ");"))
 		else:
+			_lines.append(space_str + str("// 创建节点:", var_name))
 			_lines.append(space_str + str(klass_name, " *", var_name, " = memnew(", klass_name, ");"))
 		_lines.append(space_str + str(var_name, "->set_name(\"", var_name, "\" );"))
 	
@@ -207,6 +207,12 @@ func _get_property_set_code(obj: Object, property_name: String, value) -> String
 				if value < 0:
 					return str("_set_anchors_layout_preset(", -1, " )")
 				return str("set_anchors_and_offsets_preset(", _layout_preset_codes[value], " )")
+			"mouse_filter":
+				return str("set_mouse_filter(", _mouse_filter_mode_codes[value], " )")
+			"mouse_behavior_recursive":
+				return str("set_mouse_behavior_recursive(", _mouse_behavior_recursive_codes[value], " )")
+			"mouse_default_cursor_shape":
+				return str("set_mouse_default_cursor_shape(", _mouse_default_cursor_shape_codes[value], " )")
 	
 	if obj is TextureRect:
 		match property_name:
@@ -226,6 +232,10 @@ func _get_property_set_code(obj: Object, property_name: String, value) -> String
 				return str("set_horizontal_alignment(", _label_hor_align_codes[value], ")")
 			"vertical_alignment":
 				return str("set_vertical_alignment(", _label_ver_align_codes[value], ")")
+			"visible_characters_behavior":
+				return str("set_visible_characters_behavior(", _visible_characters_behavior_codes[value], ")")
+			"text_overrun_behavior":
+				return str("set_text_overrun_behavior(", _text_overrun_behavior_codes[value], ")")
 	
 	
 	# Assume regular setter
@@ -394,4 +404,50 @@ const _texture_rect_stretch_mode_codes = {
 	TextureRect.STRETCH_KEEP_ASPECT: "TextureRect::STRETCH_KEEP_ASPECT",
 	TextureRect.STRETCH_KEEP_ASPECT_CENTERED: "TextureRect::STRETCH_KEEP_ASPECT_CENTERED",
 	TextureRect.STRETCH_KEEP_ASPECT_COVERED: "TextureRect::STRETCH_KEEP_ASPECT_COVERED"
+}
+const _mouse_filter_mode_codes = {
+	0: "Control::MOUSE_FILTER_STOP",
+	1: "Control::MOUSE_FILTER_PASS",
+	2: "Control::MOUSE_FILTER_IGNORE",
+}
+const _mouse_behavior_recursive_codes = {
+	0: "Control::MOUSE_BEHAVIOR_INHERITED",
+	1: "Control::MOUSE_BEHAVIOR_DISABLED",
+	2: "Control::MOUSE_BEHAVIOR_ENABLED",
+}
+const _mouse_default_cursor_shape_codes ={
+		0: "Control::CURSOR_ARROW",
+		1: "Control::CURSOR_IBEAM",
+		2: "Control::CURSOR_POINTING_HAND",
+		3: "Control::CURSOR_CROSS",
+		4: "Control::CURSOR_WAIT",
+		5: "Control::CURSOR_BUSY",
+		6: "Control::CURSOR_DRAG",
+		7: "Control::CURSOR_CAN_DROP",
+		8: "Control::CURSOR_FORBIDDEN",
+		9: "Control::CURSOR_VSIZE",
+		10: "Control::CURSOR_HSIZE",
+		11: "Control::CURSOR_BDIAGSIZE",
+		12: "Control::CURSOR_FDIAGSIZE",
+		13: "Control::CURSOR_MOVE",
+		14: "Control::CURSOR_VSPLIT",
+		15: "Control::CURSOR_HSPLIT",
+		16: "Control::CURSOR_HELP",
+		17: "Control::CURSOR_MAX",
+}
+const _visible_characters_behavior_codes ={
+		0: "TextServer::VC_CHARS_BEFORE_SHAPING",
+		1: "TextServer::VC_CHARS_AFTER_SHAPING",
+		2: "TextServer::VC_GLYPHS_AUTO",
+		3: "TextServer::VC_GLYPHS_LTR",
+		4: "TextServer::VC_GLYPHS_RTL",
+}		
+const _text_overrun_behavior_codes ={
+		0: "TextServer::OVERRUN_NO_TRIMMING",
+		1: "TextServer::OVERRUN_TRIM_CHAR",
+		2: "TextServer::OVERRUN_TRIM_WORD",
+		3: "TextServer::OVERRUN_TRIM_ELLIPSIS",
+		4: "TextServer::OVERRUN_TRIM_WORD_ELLIPSIS",
+		5: "TextServer::OVERRUN_TRIM_ELLIPSIS_FORCE",
+		6: "TextServer::OVERRUN_TRIM_WORD_ELLIPSIS_FORCE",
 }
