@@ -41,8 +41,9 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 	# Create the node in a variable if necessary
 	if var_name != "":
 		if not _has_default_node_name(node):
-			_lines.append("\n\n" + space_str + str("// 创建节点:", node.name))
+			_lines.append( space_str + str("// 创建节点:", node.name))
 		_lines.append(space_str + str(klass_name, " *", var_name, " = memnew(", klass_name, ");"))
+		_lines.append(space_str + str(var_name, "->set_name(\"", var_name, "\" );"))
 	
 		if parent_var_name == "":
 			_lines.append( space_str + str("add_child(", var_name, ");"))
@@ -93,8 +94,7 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 
 	# Process children
 	if node.get_child_count() > 0:
-		_lines.append("")
-		_lines.append(space_str + "{\n")
+		_lines.append(space_str + "{")
 		
 		for i in node.get_child_count():
 			var child = node.get_child(i)
@@ -103,7 +103,7 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 			var child_info = _process_node(child, root, space + 1,var_name)
 			_lines.append("")
 	
-		_lines.append("\n" + space_str + "}\n")
+		_lines.append(space_str + "}")
 	return {
 		"var_name": var_name
 	}
@@ -227,9 +227,11 @@ static func _value_to_code(v) -> String:
 			return str("Color(", v.r, ", ", v.g, ", ", v.b, ", ", v.a, ")")
 		TYPE_STRING:
 			return str("L\"", v.c_escape(), "\"")
+		TYPE_STRING_NAME:
+			return str("SNAME(L\"", v.c_escape(), "\")")
 		TYPE_OBJECT:
 			if v is Resource:
-				return "nullptr /* TODO resource here */"
+				return v.resource_path
 			else:
 				return "nullptr /* TODO reference here */"
 		_:
@@ -300,10 +302,10 @@ const _label_ver_align_codes = {
 	VERTICAL_ALIGNMENT_FILL: "VerticalAlignment::VERTICAL_ALIGNMENT_FILL"
 }
 const _layout_mode = {
-	0: "LAYOUT_MODE_POSITION",
-	1: "LAYOUT_MODE_ANCHORS",
-	2: "LAYOUT_MODE_CONTAINER",
-	3: "LAYOUT_MODE_UNCONTROLLED"
+	0: "Control::LAYOUT_MODE_POSITION",
+	1: "Control::LAYOUT_MODE_ANCHORS",
+	2: "Control::LAYOUT_MODE_CONTAINER",
+	3: "Control::LAYOUT_MODE_UNCONTROLLED"
 }
 const _texture_rect_expand_mode = {
 	TextureRect.EXPAND_KEEP_SIZE: "TextureRect.EXPAND_KEEP_SIZE",
