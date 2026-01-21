@@ -27,6 +27,7 @@ text = "Copy to clipboard"
 [node name="TextEdit" type="TextEdit" parent="VBoxContainer" unique_id=1699311334]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_font_sizes/font_size = 10
 
 [connection signal="canceled" from="." to="." method="_on_Ok_pressed"]
 [connection signal="pressed" from="VBoxContainer/HBoxContainer2/CopyToClipboard" to="." method="_on_CopyToClipboard_pressed"]

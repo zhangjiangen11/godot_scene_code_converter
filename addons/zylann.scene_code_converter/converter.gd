@@ -5,13 +5,50 @@
 var _vars = []
 var _lines : Array[String] = []
 
+var _style_lines : Array[String] = []
+
+var style_bos : Dictionary[String,StyleBox] = {}
+
+func _process_style_box(box :StyleBox ):
+	var space_str = "\t"
+	var name = _pascal_to_snake(box.resource_path.substr(box.resource_path.find("::") + 2))
+	var klass_name := box.get_class()
+	var var_name = name
+	
+	_style_lines.append( str(space_str, "// 创建Stybox:",var_name))
+	_style_lines.append( str(space_str,"Ref<",klass_name, "> ", var_name, " = memnew(", klass_name, ");"))
+	var default_instance: StyleBox = ClassDB.instantiate(klass_name)
+	assert(default_instance is StyleBox)
+
+	# Set properties
+	var props = box.get_property_list()
+	
+	for prop in props:
+		if (prop.usage & PROPERTY_USAGE_STORAGE) == 0:
+			continue
+		var default_value = default_instance.get(prop.name)
+		var current_value = box.get(prop.name)
+		if current_value != default_value:
+			var value_code := _value_to_code(current_value)
+			_style_lines.append( str(space_str,var_name,"->set(SNAME(\"",prop.name,"\"),", value_code,");"))
+
+	pass
 
 func convert_branch(root: Node) -> String:
 	_vars.clear()
 	_lines.clear()
+	style_bos.clear()
 	_process_node(root, root, 0,"")
+	
+	for s in style_bos:
+		_process_style_box(style_bos[s])
 
 	var str : String
+	
+	for s in _style_lines:
+		if s.length() > 0:
+			str += s + "\n"
+	str += "\t // root 节点\n"
 	for s in _lines:
 		if s.length() > 0:
 			str += s + "\n"
@@ -26,7 +63,9 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 	var var_name = ""
 	if node != root:
 		if node.name.is_valid_ascii_identifier():
-			var_name = node.name
+			var_name = node.name.strip_edges().replace(" ","_").replace("$","_").replace("-","_").replace("/","_").replace("\\","_")
+			if var_name.begins_with(klass_name):
+				var_name = _pascal_to_snake(klass_name)
 		else:
 			var_name = _pascal_to_snake(klass_name)
 		if var_name in _vars:
@@ -42,7 +81,12 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 	if var_name != "":
 		if not _has_default_node_name(node):
 			_lines.append( space_str + str("// 创建节点:", node.name))
-		_lines.append(space_str + str(klass_name, " *", var_name, " = memnew(", klass_name, ");"))
+		# @这个标记,代表是成员变量,不需要重新声明变量
+		if var_name.begins_with("@"):
+			_lines.append(space_str + str(var_name, " = memnew(", klass_name, ");"))
+			var_name = var_name.substr(1)
+		else:
+			_lines.append(space_str + str(klass_name, " *", var_name, " = memnew(", klass_name, ");"))
 		_lines.append(space_str + str(var_name, "->set_name(\"", var_name, "\" );"))
 	
 		if parent_var_name == "":
@@ -50,21 +94,6 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 		else:
 			_lines.append( space_str + str(parent_var_name, "->add_child(", var_name, ");"))
 	# Ignore properties which are sometimes overriden by other factors
-	var ignored_properties := []
-	if node is Control:
-		if (node.get_parent() is Container) or node == root:
-			ignored_properties += [
-				"margin_left",
-				"margin_right",
-				"margin_top",
-				"margin_bottom",
-				"anchor_left",
-				"anchor_right",
-				"anchor_top",
-				"anchor_bottom"
-			]
-		if node.get_parent() is TabContainer:
-			ignored_properties.append("visible")
 
 	var default_instance: Node = ClassDB.instantiate(klass_name)
 	assert(default_instance is Node)
@@ -74,8 +103,6 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 	
 	for prop in props:
 		if (prop.usage & PROPERTY_USAGE_STORAGE) == 0:
-			continue
-		if prop.name in ignored_properties:
 			continue
 		var default_value = default_instance.get(prop.name)
 		var current_value = node.get(prop.name)
@@ -96,8 +123,8 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 	if node.get_child_count() > 0:
 		_lines.append(space_str + "{")
 		
-		for i in node.get_child_count():
-			var child = node.get_child(i)
+		for i in node.get_child_count(true):
+			var child = node.get_child(i,true)
 			if child.owner == null:
 				continue
 			var child_info = _process_node(child, root, space + 1,var_name)
@@ -118,13 +145,13 @@ static func get_grow_sirection_int_codes(index : int):
 				return "Control::GROW_DIRECTION_BOTH"
 		return ""
 
-static func _get_property_set_code(obj: Object, property_name: String, value) -> String:
+func _get_property_set_code(obj: Object, property_name: String, value) -> String:
 	var value_code := _value_to_code(value)
 	
 	# We first check very specific cases for best translation (but requires specific code)
 	if property_name.find("/") >0:
 		# 处理主体参数的设置
-		return str("set(\"",property_name,"\",", value_code,")")
+		return str("set(SNAME(\"",property_name,"\"),", value_code,")")
 	if obj is Control:
 		match property_name:
 			"margin_left":
@@ -208,7 +235,11 @@ static func _get_property_set_code(obj: Object, property_name: String, value) ->
 	#return str("set(\"", property_name, "\", ", value_code, ")")
 
 
-static func _value_to_code(v) -> String:
+func _value_to_code(v) -> String:
+	if v is StyleBox:
+		if v.resource_path.find("::") > 0:
+			style_bos[v.resource_path] = v
+			return _pascal_to_snake(v.resource_path.substr(v.resource_path.find("::") + 2))
 	match (typeof(v)):
 		TYPE_BOOL:
 			if v:
@@ -229,9 +260,11 @@ static func _value_to_code(v) -> String:
 			return str("L\"", v.c_escape(), "\"")
 		TYPE_STRING_NAME:
 			return str("SNAME(L\"", v.c_escape(), "\")")
+		TYPE_NODE_PATH:
+			return str("NodePath(L\"", str(v), "\")")
 		TYPE_OBJECT:
 			if v is Resource:
-				return v.resource_path
+				return str("ResourceLoader::load(\"",v.resource_path,"\")")
 			else:
 				return "nullptr /* TODO reference here */"
 		_:
