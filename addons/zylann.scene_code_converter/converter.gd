@@ -3,20 +3,20 @@
 # Converts a scene branch into C++ engine-side code that will build it.
 
 var _vars = []
-var _lines : Array[String] = []
+var _lines: Array[String] = []
 
-var _style_lines : Array[String] = []
+var _style_lines: Array[String] = []
 
-var style_bos : Dictionary[String,StyleBox] = {}
+var style_bos: Dictionary[String, StyleBox] = {}
 
-func _process_style_box(box :StyleBox ):
+func _process_style_box(box: StyleBox):
 	var space_str = "\t"
 	var name = _pascal_to_snake(box.resource_path.substr(box.resource_path.find("::") + 2))
 	var klass_name := box.get_class()
 	var var_name = name
 	
-	_style_lines.append( str(space_str, "// 创建Stybox:",var_name))
-	_style_lines.append( str(space_str,"Ref<",klass_name, "> ", var_name, " = memnew(", klass_name, ");"))
+	_style_lines.append(str(space_str, "// 创建Stybox:", var_name))
+	_style_lines.append(str(space_str, "Ref<", klass_name, "> ", var_name, " = memnew(", klass_name, ");"))
 	var default_instance: StyleBox = ClassDB.instantiate(klass_name)
 	assert(default_instance is StyleBox)
 
@@ -30,7 +30,7 @@ func _process_style_box(box :StyleBox ):
 		var current_value = box.get(prop.name)
 		if current_value != default_value:
 			var value_code := _value_to_code(current_value)
-			_style_lines.append( str(space_str,var_name,"->set(SNAME(\"",prop.name,"\"),", value_code,");"))
+			_style_lines.append(str(space_str, var_name, "->set(SNAME(\"", prop.name, "\"),", value_code, ");"))
 
 	pass
 
@@ -38,12 +38,12 @@ func convert_branch(root: Node) -> String:
 	_vars.clear()
 	_lines.clear()
 	style_bos.clear()
-	_process_node(root, root, 0,"")
+	_process_node(root, root, 0, "")
 	
 	for s in style_bos:
 		_process_style_box(style_bos[s])
 
-	var str : String
+	var str: String
 	
 	for s in _style_lines:
 		if s.length() > 0:
@@ -55,15 +55,15 @@ func convert_branch(root: Node) -> String:
 	return str
 
 
-func _process_node(node: Node, root: Node, space: int, parent_var_name : String) -> Dictionary:
+func _process_node(node: Node, root: Node, space: int, parent_var_name: String) -> Dictionary:
 	var klass_name := node.get_class()
 	var space_str = "\t"
 	for i in space:
 		space_str += "\t"
 	var var_name = ""
 	if node != root:
-		if node.name.is_valid_ascii_identifier():
-			var_name = node.name.strip_edges().replace(" ","_").replace("$","_").replace("-","_").replace("/","_").replace("\\","_")
+		if node.name.begins_with("&") || node.name.is_valid_ascii_identifier():
+			var_name = node.name.strip_edges().replace(" ", "_").replace("$", "_").replace("-", "_").replace("/", "_").replace("\\", "_")
 			if var_name.begins_with(klass_name):
 				var_name = _pascal_to_snake(klass_name)
 		else:
@@ -80,19 +80,19 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 	# Create the node in a variable if necessary
 	if var_name != "":
 		if not _has_default_node_name(node):
-			_lines.append( space_str + str("// 创建节点:", node.name))
-		# @这个标记,代表是成员变量,不需要重新声明变量
-		if var_name.begins_with("@"):
-			_lines.append(space_str + str(var_name, " = memnew(", klass_name, ");"))
+			_lines.append(space_str + str("// 创建节点:", node.name))
+		# &这个标记,代表是成员变量,不需要重新声明变量
+		if var_name.begins_with("&"):
 			var_name = var_name.substr(1)
+			_lines.append(space_str + str(var_name, " = memnew(", klass_name, ");"))
 		else:
 			_lines.append(space_str + str(klass_name, " *", var_name, " = memnew(", klass_name, ");"))
 		_lines.append(space_str + str(var_name, "->set_name(\"", var_name, "\" );"))
 	
 		if parent_var_name == "":
-			_lines.append( space_str + str("add_child(", var_name, ");"))
+			_lines.append(space_str + str("add_child(", var_name, ");"))
 		else:
-			_lines.append( space_str + str(parent_var_name, "->add_child(", var_name, ");"))
+			_lines.append(space_str + str(parent_var_name, "->add_child(", var_name, ");"))
 	# Ignore properties which are sometimes overriden by other factors
 
 	var default_instance: Node = ClassDB.instantiate(klass_name)
@@ -111,7 +111,7 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 			var set_code := _get_property_set_code(node, prop.name, current_value)
 			if set_code.length() < 3:
 				_lines.append("")
-			else:	
+			else:
 				if var_name == "":
 					_lines.append(space_str + str(set_code, ";"))
 				else:
@@ -124,10 +124,10 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 		_lines.append(space_str + "{")
 		
 		for i in node.get_child_count(true):
-			var child = node.get_child(i,true)
+			var child = node.get_child(i, true)
 			if child.owner == null:
 				continue
-			var child_info = _process_node(child, root, space + 1,var_name)
+			var child_info = _process_node(child, root, space + 1, var_name)
 			_lines.append("")
 	
 		_lines.append(space_str + "}")
@@ -135,8 +135,8 @@ func _process_node(node: Node, root: Node, space: int, parent_var_name : String)
 		"var_name": var_name
 	}
 
-static func get_grow_sirection_int_codes(index : int):
-		match  index:
+static func get_grow_sirection_int_codes(index: int):
+		match index:
 			0:
 				return "Control::GROW_DIRECTION_BEGIN"
 			1:
@@ -149,9 +149,9 @@ func _get_property_set_code(obj: Object, property_name: String, value) -> String
 	var value_code := _value_to_code(value)
 	
 	# We first check very specific cases for best translation (but requires specific code)
-	if property_name.find("/") >0:
+	if property_name.find("/") > 0:
 		# 处理主体参数的设置
-		return str("set(SNAME(\"",property_name,"\"),", value_code,")")
+		return str("set(SNAME(\"", property_name, "\"),", value_code, ")")
 	if obj is Control:
 		match property_name:
 			"margin_left":
@@ -187,26 +187,26 @@ func _get_property_set_code(obj: Object, property_name: String, value) -> String
 			"modulate":
 				return str("set_modulate(", value_code, ")")
 			"offset_left":
-				if(obj.get("layout_mode") != 1):
+				if (obj.get("layout_mode") != 1):
 					return ""
-				return str("set_offset(SIDE_LEFT,", value ," )")
+				return str("set_offset(SIDE_LEFT,", value, " )")
 				
 			"offset_top":
-				if(obj.get("layout_mode") != 1):
+				if (obj.get("layout_mode") != 1):
 					return ""
-				return str("set_offset(SIDE_TOP,", value ," )")
+				return str("set_offset(SIDE_TOP,", value, " )")
 			"offset_right":
-				if(obj.get("layout_mode") != 1):
+				if (obj.get("layout_mode") != 1):
 					return ""
-				return str("set_offset(SIDE_RIGHT,", value ," )")
+				return str("set_offset(SIDE_RIGHT,", value, " )")
 			"offset_bottom":
-				if(obj.get("layout_mode") != 1):
+				if (obj.get("layout_mode") != 1):
 					return ""
-				return str("set_offset(SIDE_BOTTOM,", value ," )")
+				return str("set_offset(SIDE_BOTTOM,", value, " )")
 			"anchors_preset":
 				if value < 0:
-					return str("_set_anchors_layout_preset(", -1 ," )")
-				return str("set_anchors_and_offsets_preset(", _layout_preset_codes[value] ," )")
+					return str("_set_anchors_layout_preset(", -1, " )")
+				return str("set_anchors_and_offsets_preset(", _layout_preset_codes[value], " )")
 	
 	if obj is TextureRect:
 		match property_name:
@@ -264,7 +264,7 @@ func _value_to_code(v) -> String:
 			return str("NodePath(L\"", str(v), "\")")
 		TYPE_OBJECT:
 			if v is Resource:
-				return str("ResourceLoader::load(\"",v.resource_path,"\")")
+				return str("ResourceLoader::load(\"", v.resource_path, "\")")
 			else:
 				return "nullptr /* TODO reference here */"
 		_:
@@ -295,7 +295,7 @@ static func _has_default_node_name(node: Node) -> bool:
 
 
 # Some setters have a different name in engine code
-static var _aliased_setters : Dictionary = {
+static var _aliased_setters: Dictionary = {
 	Control: {
 		"rect_min_size": "set_custom_minimum_size"
 	},
@@ -341,12 +341,12 @@ const _layout_mode = {
 	3: "Control::LAYOUT_MODE_UNCONTROLLED"
 }
 const _texture_rect_expand_mode = {
-	TextureRect.EXPAND_KEEP_SIZE: "TextureRect.EXPAND_KEEP_SIZE",
-	TextureRect.EXPAND_IGNORE_SIZE: "TextureRect.EXPAND_IGNORE_SIZE",
-	TextureRect.EXPAND_FIT_WIDTH: "TextureRect.EXPAND_FIT_WIDTH",
-	TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL: "TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL",
-	TextureRect.EXPAND_FIT_HEIGHT: "TextureRect.EXPAND_FIT_HEIGHT",
-	TextureRect.EXPAND_FIT_HEIGHT_PROPORTIONAL: "TextureRect.EXPAND_FIT_HEIGHT_PROPORTIONAL",
+	TextureRect.EXPAND_KEEP_SIZE: "TextureRect::EXPAND_KEEP_SIZE",
+	TextureRect.EXPAND_IGNORE_SIZE: "TextureRect::EXPAND_IGNORE_SIZE",
+	TextureRect.EXPAND_FIT_WIDTH: "TextureRect::EXPAND_FIT_WIDTH",
+	TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL: "TextureRect::EXPAND_FIT_WIDTH_PROPORTIONAL",
+	TextureRect.EXPAND_FIT_HEIGHT: "TextureRect::EXPAND_FIT_HEIGHT",
+	TextureRect.EXPAND_FIT_HEIGHT_PROPORTIONAL: "TextureRect::EXPAND_FIT_HEIGHT_PROPORTIONAL",
 }
 
 const _box_container_alignment_codes = {
