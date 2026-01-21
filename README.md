@@ -1,4 +1,6 @@
 场景UI转C++代码
+
+=======================
 用来快速制作自己的编辑器界面,很多复杂工具还是要在C++里面制作,但是C++拼界面是非常繁琐恶心的事情,不得不用scene来扩展,这样导致工具很难解耦.
 新版本已经适配到godot4,但是有一些小改动,需要使用者自己调整.
 支持了StyleBox插件,可以给godot制作非常炫酷的界面了,动画还不支持,后期再看看怎么搞.
@@ -30,6 +32,7 @@ Usage
 	- Names are generated. If you wish to keep some nodes as member variables, you should replace them.
 	- It's possible that some of the code is invalid. In that case you may adjust it, and eventually do a PR to fix it, when possible.
 	- Sometimes nodes have resources on them like textures, but in engine code resources are handled differently. The plugin currently leaves them out.
+
 
 
 
