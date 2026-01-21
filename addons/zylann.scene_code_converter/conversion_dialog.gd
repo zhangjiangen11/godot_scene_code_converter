@@ -1,15 +1,14 @@
-tool
-extends WindowDialog
+@tool
+extends AcceptDialog
 
 const Util = preload("./util.gd")
 
-onready var _text_edit = $VBoxContainer/TextEdit
+@onready var _text_edit = $VBoxContainer/TextEdit
 
 
 func _ready():
 	if Util.is_in_edited_scene(self):
 		return
-	_text_edit.add_font_override("font", get_font("source", "EditorFonts"))
 
 
 func set_code(code: String):
@@ -17,8 +16,7 @@ func set_code(code: String):
 
 
 func _on_CopyToClipboard_pressed():
-	_text_edit.select_all()
-	OS.clipboard = _text_edit.text
+	DisplayServer.clipboard_set(_text_edit.text)
 
 
 func _on_Ok_pressed():
