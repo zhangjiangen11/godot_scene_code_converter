@@ -1,11 +1,10 @@
-场景UI转C++代码
+UI to C++ code conversion
 
-=======================
-用来快速制作自己的编辑器界面,很多复杂工具还是要在C++里面制作,但是C++拼界面是非常繁琐恶心的事情,不得不用scene来扩展,这样导致工具很难解耦.
-新版本已经适配到godot4,但是有一些小改动,需要使用者自己调整.
-支持了StyleBox插件,可以给godot制作非常炫酷的界面了,动画还不支持,后期再看看怎么搞.
-不过编辑器界面对于动画需求不是那么太紧急.
-材质扩展目前支持的也不太好,这个玩意也不太重要.
+========================
+
+The engine needs to be modified to set `_set_anchors_layout_preset` to public to ensure complete compatibility with archives. This is used to quickly create custom editor interfaces. Many complex tools still need to be created in C++, but building interfaces in C++ is a very tedious and tedious process, necessitating the use of scenes for extensions, which makes it difficult to decouple the tools. The new version is compatible with godot4, but with some minor changes that users need to adjust themselves. The StyleBox plugin is now supported, allowing for the creation of very cool interfaces for godot. Animations are not yet supported; we'll see how to address this later.
+
+However, animation requirements aren't that urgent for the editor interface. Material extension support is currently not very good, but this isn't particularly important.
 =======================
 
 This plugin helps you convert any branch of nodes into C++ engine code that can be used to develop the Godot Editor. This is particularly useful for making GUIs, and the plugin was primarily developped towards this goal.
@@ -32,6 +31,7 @@ Usage
 	- Names are generated. If you wish to keep some nodes as member variables, you should replace them.
 	- It's possible that some of the code is invalid. In that case you may adjust it, and eventually do a PR to fix it, when possible.
 	- Sometimes nodes have resources on them like textures, but in engine code resources are handled differently. The plugin currently leaves them out.
+
 
 
 
