@@ -237,6 +237,12 @@ func _get_property_set_code(obj: Object, property_name: String, value) -> String
 			"text_overrun_behavior":
 				return str("set_text_overrun_behavior(", _text_overrun_behavior_codes[value], ")")
 	
+	if obj is LineEdit:
+		match property_name:
+			"alignment":
+				return str("set_horizontal_alignment(", _label_hor_align_codes[value], ")")
+			"virtual_keyboard_type":
+				return str("set_virtual_keyboard_type(", _virtual_keyboard_type_codes[value], ")")
 	
 	# Assume regular setter
 	return str("set_", property_name, "(", value_code, ")")
@@ -415,7 +421,7 @@ const _mouse_behavior_recursive_codes = {
 	1: "Control::MOUSE_BEHAVIOR_DISABLED",
 	2: "Control::MOUSE_BEHAVIOR_ENABLED",
 }
-const _mouse_default_cursor_shape_codes ={
+const _mouse_default_cursor_shape_codes = {
 		0: "Control::CURSOR_ARROW",
 		1: "Control::CURSOR_IBEAM",
 		2: "Control::CURSOR_POINTING_HAND",
@@ -435,14 +441,14 @@ const _mouse_default_cursor_shape_codes ={
 		16: "Control::CURSOR_HELP",
 		17: "Control::CURSOR_MAX",
 }
-const _visible_characters_behavior_codes ={
+const _visible_characters_behavior_codes = {
 		0: "TextServer::VC_CHARS_BEFORE_SHAPING",
 		1: "TextServer::VC_CHARS_AFTER_SHAPING",
 		2: "TextServer::VC_GLYPHS_AUTO",
 		3: "TextServer::VC_GLYPHS_LTR",
 		4: "TextServer::VC_GLYPHS_RTL",
-}		
-const _text_overrun_behavior_codes ={
+}
+const _text_overrun_behavior_codes = {
 		0: "TextServer::OVERRUN_NO_TRIMMING",
 		1: "TextServer::OVERRUN_TRIM_CHAR",
 		2: "TextServer::OVERRUN_TRIM_WORD",
@@ -450,4 +456,14 @@ const _text_overrun_behavior_codes ={
 		4: "TextServer::OVERRUN_TRIM_WORD_ELLIPSIS",
 		5: "TextServer::OVERRUN_TRIM_ELLIPSIS_FORCE",
 		6: "TextServer::OVERRUN_TRIM_WORD_ELLIPSIS_FORCE",
+}
+		
+const _virtual_keyboard_type_codes = {
+		0: "LineEdit::KEYBOARD_TYPE_DEFAULT",
+		1: "LineEdit::KEYBOARD_TYPE_MULTILINE",
+		2: "LineEdit::KEYBOARD_TYPE_NUMBER",
+		3: "LineEdit::KEYBOARD_TYPE_NUMBER_DECIMAL",
+		4: "LineEdit::KEYBOARD_TYPE_EMAIL_ADDRESS",
+		5: "LineEdit::KEYBOARD_TYPE_PASSWORD",
+		6: "LineEdit::KEYBOARD_TYPE_URL",
 }
